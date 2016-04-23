@@ -1,0 +1,59 @@
+// Load required packages
+var mongoose = require('mongoose');
+var statesArray = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"];
+
+var UserSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true
+    },
+    email: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    gender: {
+        type: String,
+        enum: ['male', 'female'],
+        required: true
+    },
+    about: {
+        type: String
+    },
+    reputationPoints: {
+        type: Number,
+        default: 0
+    },
+    following: {
+        type: [String]
+    },
+    followers: {
+        type: [String]
+    },
+    history: {
+        attended: [String],
+        hosted: [String]
+    },
+    profileImage: {
+        type: String
+    },
+    address: {
+        addressLineFirst: String,
+        addressLineSecond: String,
+        city: String,
+        state: {
+            type: String,
+            uppercase: true,
+            required: true,
+            enum: statesArray
+        },
+        zip: {
+            type: Number,
+            required: true
+        },
+        coordinate: [Number]
+    }
+});
+
+// Export the Mongoose model
+module.exports = mongoose.model('User', UserSchema);
