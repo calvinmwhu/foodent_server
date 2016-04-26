@@ -1,17 +1,27 @@
 // Get the packages we need
 var express = require('express');
 var mongoose = require('mongoose');
-
-var User = require('./models/user');
-var Event = require('./models/event');
-var Image = require('./models/image');
-var Invite = require('./models/invite');
-
+var config = require('./config/database');
+var passport = require('passport');
+var morgan = require('morgan');
+var cookieParser = require('cookie-parser');
+var session = require('express-session');
 var bodyParser = require('body-parser');
 var router = express.Router();
+//var User = require('./models/user');
+//var Event = require('./models/event');
+//var Image = require('./models/image');
+//var Invite = require('./models/invite');
 
-//replace this with your Mongolab URL
-mongoose.connect('mongodb://localhost/mp4');
+mongoose.connect(config.database, function (err) {
+    if (err) {
+        console.log('Connection Error: ', err);
+    } else {
+        console.log('Connection Succeeded');
+    }
+});
+
+require('./config/passport')(passport);
 
 // Create our Express application
 var app = express();
@@ -27,32 +37,23 @@ var allowCrossDomain = function (req, res, next) {
 };
 app.use(allowCrossDomain);
 
+app.use(morgan('dev'));
+app.use(cookieParser());
+//app.use(session({ secret: config.secret }));
+
 // Use the body-parser package in our application
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+app.use(bodyParser.json());
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 // All our routes will start with /api
 app.use('/api', router);
+require('./app/routes.js')(router, passport);
 
-
-
-
-//Default route here
-//var homeRoute = router.route('/');
-//
-//homeRoute.get(function (req, res) {
-//    res.json({message: 'Hello World!'});
-//});
-//
-////Llama route
-//var llamaRoute = router.route('/llamas');
-//
-//llamaRoute.get(function (req, res) {
-//    res.json([{"name": "alice", "height": 12}, {"name": "jane", "height": 13}]);
-//});
-
-//Add more routes here
 
 // Start the server
 app.listen(port);
