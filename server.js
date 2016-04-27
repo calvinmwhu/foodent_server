@@ -7,6 +7,7 @@ var morgan = require('morgan');
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
 var bodyParser = require('body-parser');
+var jwt = require('jwt-simple');
 var router = express.Router();
 //var User = require('./models/user');
 //var Event = require('./models/event');
@@ -35,25 +36,26 @@ var allowCrossDomain = function (req, res, next) {
     res.header("Access-Control-Allow-Headers", "X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept");
     next();
 };
+
 app.use(allowCrossDomain);
-
-app.use(morgan('dev'));
-app.use(cookieParser());
-//app.use(session({ secret: config.secret }));
-
 // Use the body-parser package in our application
 app.use(bodyParser.urlencoded({
     extended: true
 }));
 app.use(bodyParser.json());
 
+app.use(morgan('dev'));
+app.use(cookieParser());
 app.use(passport.initialize());
-app.use(passport.session());
 
 // All our routes will start with /api
 app.use('/api', router);
-require('./app/routes.js')(router, passport);
+var homeRoute = router.route('/');
+homeRoute.get(function (req, res) {
+    res.json({message: 'Hello Welcome to Foodent API!', data: [] });
+});
 
+require('./app/routes.js')(router, passport);
 
 // Start the server
 app.listen(port);
