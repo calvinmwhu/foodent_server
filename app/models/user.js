@@ -52,7 +52,7 @@ var UserSchema = new mongoose.Schema({
             enum: statesArray
         },
         zip: {
-            type: Number,
+            type: Number
             //required: true
         },
         coordinate: [Number]

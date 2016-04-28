@@ -31,7 +31,7 @@ module.exports = function (router, passport) {
                 user.comparePassword(req.body.password, function (err, isMatch) {
                     if (isMatch && !err) {
                         // if user is found and password is right create a token
-                        var token = jwt.encode(user, config.secret);
+                        var token = jwt.encode({name: user.name, email: user.email}, config.secret);
                         // return the information including token as JSON
                         res.json({message: 'Authentication succeeded', data: token});
                     } else {
@@ -42,36 +42,7 @@ module.exports = function (router, passport) {
         });
     });
 
-    var getToken = function (headers) {
-        if (headers && headers.authorization) {
-            var parted = headers.authorization.split(' ');
-            if (parted.length === 2) {
-                return parted[1];
-            } else {
-                return null;
-            }
-        } else {
-            return null;
-        }
-    };
-
     router.get('/userprofile', passport.authenticate('jwt', {session: false}), function(req, res) {
-        var token = getToken(req.headers);
-        if (token) {
-            var decoded = jwt.decode(token, config.secret);
-            User.findOne({
-                email: decoded.email
-            }, function(err, user) {
-                if (err) throw err;
-
-                if (!user) {
-                    return res.status(403).json({message: 'Authentication failed. User not found.', data: []});
-                } else {
-                    res.json({message: 'Welcome to your profile page', data: user});
-                }
-            });
-        } else {
-            return res.status(403).json({message: 'No token provided.', data: []});
-        }
+        res.status(200).json({message: 'Welcome to your profile page', data: req.user});
     });
 };

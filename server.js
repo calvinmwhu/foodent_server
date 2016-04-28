@@ -22,7 +22,6 @@ mongoose.connect(config.database, function (err) {
     }
 });
 
-require('./config/passport')(passport);
 
 // Create our Express application
 var app = express();
@@ -47,6 +46,7 @@ app.use(bodyParser.json());
 app.use(morgan('dev'));
 app.use(cookieParser());
 app.use(passport.initialize());
+require('./config/passport')(passport);
 
 // All our routes will start with /api
 app.use('/api', router);
