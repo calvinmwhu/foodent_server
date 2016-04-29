@@ -10,10 +10,10 @@ module.exports = function (router, passport) {
         } else {
             var newuser = User({name: req.body.name, email: req.body.email, password: req.body.password});
             newuser.save().then(function (user) {
-                res.status(201).json({message: "User created", data: user});
+                res.status(201).json({success: true, message: "User created", data: user});
             }, function (err) {
                 var errorMsg = err.name || "Unknown error";
-                res.status(500).json({message: errorMsg, data: []});
+                res.status(500).json({success: false, message: errorMsg, data: []});
             });
         }
     });
@@ -33,9 +33,9 @@ module.exports = function (router, passport) {
                         // if user is found and password is right create a token
                         var token = jwt.encode({name: user.name, email: user.email}, config.secret);
                         // return the information including token as JSON
-                        res.json({message: 'Authentication succeeded', data: token});
+                        res.json({success:true, message: 'Authentication succeeded', data: token});
                     } else {
-                        res.json({message: 'Authentication failed, wrong password', data: []});
+                        res.status(401).json({success: false, message: 'Authentication failed, wrong password', data: []});
                     }
                 });
             }
@@ -43,6 +43,6 @@ module.exports = function (router, passport) {
     });
 
     router.get('/userprofile', passport.authenticate('jwt', {session: false}), function(req, res) {
-        res.status(200).json({message: 'Welcome to your profile page', data: req.user});
+        res.status(200).json({success: true, message: 'Welcome to your profile page', data: req.user});
     });
 };

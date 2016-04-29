@@ -56,7 +56,10 @@ var UserSchema = new mongoose.Schema({
             //required: true
         },
         coordinate: [Number]
-    }
+    },
+    notifications: [{
+        text: String, notificationType: String, user_id: String, event_id: String, isRead: Boolean
+    }]
 });
 
 
