@@ -6,7 +6,7 @@ module.exports = function (router, passport) {
 
     router.post('/signup', function (req, res) {
         if (!req.body.name || !req.body.email || !req.body.password) {
-            res.json({message: "Please enter a name, an email, and a password"});
+            res.status(500).json({message: "Please enter a name, an email, and a password"});
         } else {
             var newuser = User({name: req.body.name, email: req.body.email, password: req.body.password});
             newuser.save().then(function (user) {
@@ -25,7 +25,7 @@ module.exports = function (router, passport) {
         }, function (err, user) {
             if (err) throw err;
             if (!user) {
-                res.json({message: 'Authentication failed. User not found.', data: []});
+                res.status(401).json({message: 'Authentication failed. User not found.', data: []});
             } else {
                 // check if password matches
                 user.comparePassword(req.body.password, function (err, isMatch) {
@@ -33,16 +33,32 @@ module.exports = function (router, passport) {
                         // if user is found and password is right create a token
                         var token = jwt.encode({name: user.name, email: user.email}, config.secret);
                         // return the information including token as JSON
-                        res.json({success:true, message: 'Authentication succeeded', data: token});
+                        res.status(200).json({success: true, message: 'Authentication succeeded', data: token});
                     } else {
-                        res.status(401).json({success: false, message: 'Authentication failed, wrong password', data: []});
+                        res.status(401).json({
+                            success: false,
+                            message: 'Authentication failed, wrong password',
+                            data: []
+                        });
                     }
                 });
             }
         });
     });
 
-    router.get('/userprofile', passport.authenticate('jwt', {session: false}), function(req, res) {
+
+    router.options('/authenticate', function (req, res) {
+        res.writeHead(200);
+        res.end();
+    });
+
+
+    router.options('/signup', function (req, res) {
+        res.writeHead(200);
+        res.end();
+    });
+
+    router.get('/userprofile', passport.authenticate('jwt', {session: false}), function (req, res) {
         res.status(200).json({success: true, message: 'Welcome to your profile page', data: req.user});
     });
 };
