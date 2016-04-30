@@ -10,14 +10,14 @@ module.exports = function (router, passport) {
         } else {
             var newuser = User({name: req.body.name, email: req.body.email, password: req.body.password});
             newuser.save().then(function (user) {
-                res.status(201).json({success: true, message: "User created", data: user});
+                var token = jwt.encode({name: user.name, email: user.email}, config.secret);
+                res.status(201).json({success: true, message: "User created", data: user, token: 'JWT '+token});
             }, function (err) {
                 var errorMsg = err.name || "Unknown error";
                 res.status(500).json({success: false, message: errorMsg, data: []});
             });
         }
     });
-
 
     router.post('/authenticate', function (req, res) {
         User.findOne({
@@ -33,7 +33,7 @@ module.exports = function (router, passport) {
                         // if user is found and password is right create a token
                         var token = jwt.encode({name: user.name, email: user.email}, config.secret);
                         // return the information including token as JSON
-                        res.status(200).json({success: true, message: 'Authentication succeeded', data: token});
+                        res.status(200).json({success: true, message: 'Authentication succeeded', data: [], token: 'JWT '+token});
                     } else {
                         res.status(401).json({
                             success: false,
@@ -46,12 +46,10 @@ module.exports = function (router, passport) {
         });
     });
 
-
     router.options('/authenticate', function (req, res) {
         res.writeHead(200);
         res.end();
     });
-
 
     router.options('/signup', function (req, res) {
         res.writeHead(200);

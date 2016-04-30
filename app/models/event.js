@@ -31,7 +31,6 @@ var EventSchema = new mongoose.Schema({
         start: Date,
         end: Date
     },
-    //invite: String,
     invite: {
         startTime: Date,
         endTime: Date,
