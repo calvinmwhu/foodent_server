@@ -9,13 +9,17 @@ module.exports = function(passport) {
     options.secretOrKey = config.secret;
     options.jwtFromRequest = ExtractJwt.fromAuthHeader();
     passport.use(new JwtStrategy(options, function(jwt_payload, done) {
-        User.findOne({id: jwt_payload.id}, function(err, user) {
+
+        User.findOne({_id: jwt_payload.id}, function(err, user) {
             if (err) {
+                console.log("err: ", jwt_payload);
                 return done(err, false);
             }
             if (user) {
+                console.log("success: ", jwt_payload);
                 done(null, user);
             } else {
+                console.log("unauthorized: ", jwt_payload);
                 done(null, false);
             }
         });

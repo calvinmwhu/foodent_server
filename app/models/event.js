@@ -1,7 +1,7 @@
 // Load required packages
 var mongoose = require('mongoose');
-var statesArray = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"];
-
+var Address = require('./address');
+var Invite = require('./invite');
 
 var EventSchema = new mongoose.Schema({
     name: {
@@ -12,33 +12,18 @@ var EventSchema = new mongoose.Schema({
     guests: [String],
     notes: String,
     address: {
-        addressLineFirst: String,
-        addressLineSecond: String,
-        city: String,
-        state: {
-            type: String,
-            uppercase: true,
-            required: true,
-            enum: statesArray
-        },
-        zip: {
-            type: Number,
-            required: true
-        },
-        coordinate: [Number]
+        type: mongoose.Schema.ObjectId,
+        ref: 'Address'
     },
     time: {
         start: Date,
         end: Date
+        //required: true
     },
     invite: {
-        startTime: Date,
-        endTime: Date,
-        inviteType: String,
-        request: {
-            userId: String,
-            timestamp: Date
-        }
+        type: mongoose.Schema.ObjectId,
+        ref: 'Invite'
+        //required: true
     },
     images: [String],
     numGuestsAllowed: Number,

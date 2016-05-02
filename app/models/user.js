@@ -1,7 +1,8 @@
 // Load required packages
 var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
-var statesArray = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"];
+var Address = require('./address');
+
 
 var UserSchema = new mongoose.Schema({
     name: {
@@ -42,20 +43,8 @@ var UserSchema = new mongoose.Schema({
         type: String
     },
     address: {
-        addressLineFirst: String,
-        addressLineSecond: String,
-        city: String,
-        state: {
-            type: String,
-            uppercase: true,
-            //required: true,
-            enum: statesArray
-        },
-        zip: {
-            type: Number
-            //required: true
-        },
-        coordinate: [Number]
+        type: mongoose.Schema.ObjectId,
+        ref: 'Address'
     },
     notifications: [{
         text: String, notificationType: String, user_id: String, event_id: String, isRead: Boolean
