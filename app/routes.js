@@ -2,6 +2,7 @@ var User = require('./models/user');
 var Image = require('./models/image');
 var Event = require('./models/event');
 var Invite = require('./models/invite');
+var Address = require('./models/address');
 var jwt = require('jwt-simple');
 var config = require('../config/database');
 
@@ -97,6 +98,16 @@ module.exports = function (router, passport) {
 
     router.post('/events', passport.authenticate('jwt', {session: false}), function (req, res) {
         var event = new Event(req.body);
+
+        //var invite = new Invite({
+        //    startTime: Date.now(),
+        //    endTime: Date.now(),
+        //    inviteType: 'open'
+        //});
+        //
+        //event.invite = invite;
+
+
         event.save().then(function (product) {
             res.status(201).json({message: "Event Created", data: product});
         }, function (err) {
@@ -113,7 +124,58 @@ module.exports = function (router, passport) {
         });
     });
 
+    router.put('/user/:id', passport.authenticate('jwt', {session: false}), function(req, res){
+        var address = new Address(req.address);
+        var newuser = new User(req.user);
 
+        if (address) {
+            newuser.address = address;
+        }
+        User.findByIdAndUpdate(req.params.id,
+            newuser,
+            {new: true, runValidators: true},
+            function (err, user) {
+                if (err) {
+                    res.status(500).json({message: err.name || err.message || "Unknown server error", data: []});
+                } else if (!user) {
+                    res.status(404).json({message: "User not found", data: []});
+                } else {
+                    res.status(200).json({message: "User updated", data: user});
+                }
+            });
+    });
+
+    router.put('/event/:id', passport.authenticate('jwt', {session: false}), function(req, res){
+        var address = new Address(req.address);
+        var newevent = new User(req.event);
+
+        if (address) {
+            event.address = address;
+        }
+        Event.findByIdAndUpdate(req.params.id,
+            newEvent,
+            {new: true, runValidators: true},
+            function (err, event) {
+                if (err) {
+                    res.status(500).json({message: err.name || err.message || "Unknown server error", data: []});
+                } else if (!user) {
+                    res.status(404).json({message: "Event not found", data: []});
+                } else {
+                    res.status(200).json({message: "Event updated", data: user});
+                }
+            });
+    });
+
+    router.delete(function (req, res) {
+        User.findByIdAndRemove(req.params.user_id,
+            function (err, user) {
+                if (err || !user) {
+                    res.status(404).json({message: "User not found", data: []});
+                } else {
+                    res.status(200).json({message: "User deleted", data: user});
+                }
+            });
+    });
 
 
     router.get('/userprofile', passport.authenticate('jwt', {session: false}), function (req, res) {
@@ -149,6 +211,11 @@ module.exports = function (router, passport) {
     });
 
     router.options('/invites', function (req, res) {
+        res.writeHead(200);
+        res.end();
+    });
+
+    router.options('/users', function (req, res) {
         res.writeHead(200);
         res.end();
     });
