@@ -4,10 +4,6 @@ var inviteType = ['open', 'restricted'];
 var InviteSchema = new mongoose.Schema({
     startTime: Date,
     endTime: Date,
-    event: {
-        type: String,
-        required: true
-    },
     inviteType: {
         type: String,
         enum: inviteType

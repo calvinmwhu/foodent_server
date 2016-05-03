@@ -99,19 +99,29 @@ module.exports = function (router, passport) {
     router.post('/events', passport.authenticate('jwt', {session: false}), function (req, res) {
         var event = new Event(req.body);
 
-        //var invite = new Invite({
-        //    startTime: Date.now(),
-        //    endTime: Date.now(),
-        //    inviteType: 'open'
-        //});
-        //
-        //event.invite = invite;
+        var invite = new Invite({
+            startTime: Date.now(),
+            endTime: Date.now(),
+            inviteType: 'open',
+            request: [{
+                userId: 'asasas',
+                timestamp: Date.now()
+            }]
+        });
 
-
-        event.save().then(function (product) {
+        invite.save().then(function (product) {
+            var inviteId = product._id;
+            event.invite = inviteId;
+            return event.save();
+        }).then(function (product) {
             res.status(201).json({message: "Event Created", data: product});
+
+            //Event.findOne({_id: product._id}).populate('invite').exec(function (err, populatedEvent) {
+            //    res.status(201).json({message: "Event Created", data: populatedEvent});
+            //});
+
         }, function (err) {
-            res.status(500).json({message: err.name || err.message || "Unknown Internal Server Error", data: []});
+            res.status(500).json({message: err, data: []});
         });
     });
 
@@ -124,7 +134,7 @@ module.exports = function (router, passport) {
         });
     });
 
-    router.put('/user/:id', passport.authenticate('jwt', {session: false}), function(req, res){
+    router.put('/user/:id', passport.authenticate('jwt', {session: false}), function (req, res) {
         var address = new Address(req.address);
         var newuser = new User(req.user);
 
@@ -145,7 +155,7 @@ module.exports = function (router, passport) {
             });
     });
 
-    router.put('/event/:id', passport.authenticate('jwt', {session: false}), function(req, res){
+    router.put('/event/:id', passport.authenticate('jwt', {session: false}), function (req, res) {
         var address = new Address(req.address);
         var newevent = new User(req.event);
 
