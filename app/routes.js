@@ -97,8 +97,12 @@ module.exports = function (router, passport) {
 
 
     router.post('/events', passport.authenticate('jwt', {session: false}), function (req, res) {
+
+        // later on, will assume req.body has this structure: {event: object, invite: object, address: object}
+
         var event = new Event(req.body);
 
+        // these two objects are just temporary data for testing purpose
         var invite = new Invite({
             startTime: Date.now(),
             endTime: Date.now(),
@@ -108,18 +112,27 @@ module.exports = function (router, passport) {
                 timestamp: Date.now()
             }]
         });
+        var address = new Address({
+            addressLineFirst: '604 W Stoughton',
+            addressLineSecond: 'apt 34',
+            city: 'Urbana',
+            state: 'IL',
+            zip: 61801
+        });
 
         invite.save().then(function (product) {
             var inviteId = product._id;
             event.invite = inviteId;
+            return address.save();
+        }).then(function(product){
+            var addressId = product._id;
+            event.address = addressId;
             return event.save();
         }).then(function (product) {
             res.status(201).json({message: "Event Created", data: product});
-
-            //Event.findOne({_id: product._id}).populate('invite').exec(function (err, populatedEvent) {
+            //Event.findOne({_id: product._id}).populate('invite').populate('address').exec(function (err, populatedEvent) {
             //    res.status(201).json({message: "Event Created", data: populatedEvent});
             //});
-
         }, function (err) {
             res.status(500).json({message: err, data: []});
         });
