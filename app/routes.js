@@ -156,10 +156,10 @@ module.exports = function (router, passport) {
             event.address = addressId;
             return event.save();
         }).then(function (product) {
-            Event.findOne({_id:product._id}).populate('address').exec(function (err, populatedEvent) {
-                if(err){
+            Event.findOne({_id: product._id}).populate('address').exec(function (err, populatedEvent) {
+                if (err) {
                     res.status(500).json({message: "Unable to retrieve event address", data: product});
-                }else{
+                } else {
                     res.status(201).json({message: "Event Created", data: populatedEvent});
                 }
             });
@@ -176,9 +176,6 @@ module.exports = function (router, passport) {
             res.status(500).json({message: err.name || err.message || "Unknown Internal Server Error", data: []});
         });
     });
-
-
-
 
 
     router.put('/users/:id', passport.authenticate('jwt', {session: false}), function (req, res) {
@@ -202,7 +199,6 @@ module.exports = function (router, passport) {
     });
 
 
-
     // this is for adding an invite to an event
     // look at the newInvite structure to determine how to send request
     router.put('/events/:id/invite', passport.authenticate('jwt', {session: false}), function (req, res) {
@@ -213,9 +209,9 @@ module.exports = function (router, passport) {
         });
         newInvite.save().then(function (product) {
             return Event.update({_id: req.params.id}, {$set: {invite: product._id}}).exec();
-        }).then(function(response){
+        }).then(function (response) {
             res.status(200).json({message: "Event updated", data: response});
-        },function(err){
+        }, function (err) {
             res.status(500).json({message: err, data: []});
         });
     });
@@ -308,6 +304,13 @@ module.exports = function (router, passport) {
         getSingleResource(Image, req, res);
     });
 
+
+    // customized end point
+    router.get('/users/:id', passport.authenticate('jwt', {session: false}), function (req, res) {
+        getSingleResource(User, req, res);
+    });
+
+
     // delete single resource
     router.delete('/users/:id', passport.authenticate('jwt', {session: false}), function (req, res) {
         deleteResource(User, req, res);
@@ -354,17 +357,5 @@ module.exports = function (router, passport) {
         res.writeHead(200);
         res.end();
     });
-
-    //
-    //router.options('/followuser', function (req, res) {
-    //    res.writeHead(200);
-    //    res.end();
-    //});
-    //
-    //router.options('/unfollowuser', function (req, res) {
-    //    res.writeHead(200);
-    //    res.end();
-    //});
-
 
 };
