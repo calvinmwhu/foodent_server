@@ -18,12 +18,10 @@ var EventSchema = new mongoose.Schema({
     time: {
         start: Date,
         end: Date
-        //required: true
     },
     invite: {
         type: mongoose.Schema.ObjectId,
         ref: 'Invite'
-        //required: true
     },
     images: [String],
     numGuestsAllowed: Number,

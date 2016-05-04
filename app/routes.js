@@ -76,22 +76,16 @@ module.exports = function (router, passport) {
 
     router.post('/signup', function (req, res) {
 
-        // later on, will assume req.body has this structure: {user: object, address: object}
-        if (!req.body.name || !req.body.email || !req.body.password || !req.body.profileImageUrl) {
-            res.status(500).json({message: "Please enter a name, an email, a password, and a image url"});
+        if (!req.body.name || !req.body.email || !req.body.password || !req.body.profileImage) {
+            res.status(500).json({message: "Please enter a name, an email, a password, and an image url"});
         } else {
-            //var newuser = User({name: req.body.name, email: req.body.email, password: req.body.password});
             var newuser = new User(req.body);
-            var profileImage = new Image({url: req.body.profileImageUrl});
-
-            profileImage.save().then(function (image) {
-                newuser.profileImage = image._id;
-                return newuser.save();
-            }).then(function (user) {
+            // we do not save address here
+            newuser.save().then(function (user) {
                 var token = jwt.encode({id: user._id, email: user.email}, config.secret);
                 res.status(201).json({success: true, message: "User created", data: user, token: 'JWT ' + token});
             }, function (err) {
-                var errorMsg = err.name || "Unknown error";
+                var errorMsg = err.message || err.name || "Unknown error";
                 res.status(500).json({success: false, message: errorMsg, data: []});
             });
         }
@@ -129,54 +123,48 @@ module.exports = function (router, passport) {
         });
     });
 
-
+    //this is for creating an event, we assume you only create invite after event is created. you don't created them at the same time
+    //look at what this event post route expects request to give it, then design your front-end according to it
     router.post('/events', passport.authenticate('jwt', {session: false}), function (req, res) {
 
-        // later on, will assume req.body has this structure: {event: object, invite: object, address: object}
-
-        var event = new Event(req.body);
-        // these two objects are just temporary data for testing purpose
-        var invite = new Invite({
-            startTime: Date.now(),
-            endTime: Date.now(),
-            inviteType: 'open',
-            request: [{
-                userId: 'asasas',
-                timestamp: Date.now()
-            }]
+        var event = new Event({
+            name: req.body.name,
+            host: req.body.host,
+            notes: req.body.notes,
+            time: {
+                start: req.body.starttime,
+                end: req.body.endtime
+            },
+            images: req.body.imageUrls,
+            numGuestsAllowed: req.body.numGuestsAllowed,
+            food: {
+                cuisine: req.body.cuisine,
+                description: req.body.foodDescription,
+                items: req.body.foodItems
+            }
         });
         var address = new Address({
-            addressLineFirst: '604 W Stoughton',
-            addressLineSecond: 'apt 34',
-            city: 'Urbana',
-            state: 'IL',
-            zip: 61801
+            addressLineFirst: req.body.addressOne,
+            addressLineSecond: req.body.addressSecond,
+            city: req.body.city,
+            state: req.body.state,
+            zip: req.body.zip
         });
 
-        invite.save().then(function (product) {
-            var inviteId = product._id;
-            event.invite = inviteId;
-            return address.save();
-        }).then(function (product) {
+        address.save().then(function (product) {
             var addressId = product._id;
             event.address = addressId;
             return event.save();
         }).then(function (product) {
-            res.status(201).json({message: "Event Created", data: product});
-            //Event.findOne({_id: product._id}).populate('invite').populate('address').exec(function (err, populatedEvent) {
-            //    res.status(201).json({message: "Event Created", data: populatedEvent});
-            //});
+            Event.findOne({_id:product._id}).populate('address').exec(function (err, populatedEvent) {
+                if(err){
+                    res.status(500).json({message: "Unable to retrieve event address", data: product});
+                }else{
+                    res.status(201).json({message: "Event Created", data: populatedEvent});
+                }
+            });
         }, function (err) {
             res.status(500).json({message: err, data: []});
-        });
-    });
-
-    router.post('/invites', passport.authenticate('jwt', {session: false}), function (req, res) {
-        var invite = new Invite(req.body);
-        invite.save().then(function (product) {
-            res.status(201).json({message: "Invite Created", data: product});
-        }, function (err) {
-            res.status(500).json({message: err.name || err.message || "Unknown Internal Server Error", data: []});
         });
     });
 
@@ -188,6 +176,10 @@ module.exports = function (router, passport) {
             res.status(500).json({message: err.name || err.message || "Unknown Internal Server Error", data: []});
         });
     });
+
+
+
+
 
     router.put('/users/:id', passport.authenticate('jwt', {session: false}), function (req, res) {
         updateResource(User, req, res);
@@ -207,6 +199,67 @@ module.exports = function (router, passport) {
 
     router.put('/invite/:id', passport.authenticate('jwt', {session: false}), function (req, res) {
         updateResource(Invite, req, res);
+    });
+
+
+
+    // this is for adding an invite to an event
+    // look at the newInvite structure to determine how to send request
+    router.put('/events/:id/invite', passport.authenticate('jwt', {session: false}), function (req, res) {
+        var newInvite = new Invite({
+            startTime: req.body.startTime,
+            endTime: req.body.endTime,
+            inviteType: req.body.inviteType
+        });
+        newInvite.save().then(function (product) {
+            return Event.update({_id: req.params.id}, {$set: {invite: product._id}}).exec();
+        }).then(function(response){
+            res.status(200).json({message: "Event updated", data: response});
+        },function(err){
+            res.status(500).json({message: err, data: []});
+        });
+    });
+
+    // follow a user end point, :id in url is the current user id
+    // the idToFollow is in the req body
+    router.put('/followuser/:id', passport.authenticate('jwt', {session: false}), function (req, res) {
+        var currentId = req.params.id;
+        var idToFollow = req.body.idToFollow;
+
+        User.update({_id: currentId}, {$push: {following: idToFollow}}, function (err, product) {
+            if (err) {
+                res.status(500).json({message: err || err.name || "Unknown server error", data: []});
+            } else {
+                User.update({_id: idToFollow}, {$push: {followers: currentId}}, function (err, product) {
+                    if (err) {
+                        res.status(500).json({message: err || err.name || "Unknown server error", data: []});
+                    } else {
+                        res.status(200).json({message: "resource updated", data: product});
+                    }
+                });
+            }
+        });
+
+    });
+
+    router.put('/unfollowuser/:id', passport.authenticate('jwt', {session: false}), function (req, res) {
+        var currentId = req.params.id;
+        var idToUnfollow = req.body.idToUnfollow;
+
+        User.update({_id: currentId}, {$pull: {following: idToUnfollow}}, function (err, product) {
+            if (err) {
+                res.status(500).json({message: err || err.name || "Unknown server error", data: []});
+            } else {
+                User.update({_id: idToUnfollow}, {$pull: {followers: currentId}}, function (err, product) {
+                    if (err) {
+                        res.status(500).json({message: err || err.name || "Unknown server error", data: []});
+                    } else {
+                        res.status(200).json({message: "resource updated", data: product});
+                    }
+                });
+            }
+        });
+
     });
 
 
@@ -301,4 +354,17 @@ module.exports = function (router, passport) {
         res.writeHead(200);
         res.end();
     });
+
+    //
+    //router.options('/followuser', function (req, res) {
+    //    res.writeHead(200);
+    //    res.end();
+    //});
+    //
+    //router.options('/unfollowuser', function (req, res) {
+    //    res.writeHead(200);
+    //    res.end();
+    //});
+
+
 };
