@@ -1,5 +1,6 @@
 var mongoose = require('mongoose');
 var inviteType = ['open', 'restricted'];
+var inviteStatus = ['accepted', 'denied', 'pending'];
 
 var InviteSchema = new mongoose.Schema({
     startTime: Date,
@@ -10,7 +11,11 @@ var InviteSchema = new mongoose.Schema({
     },
     request: [{
         userId: String,
-        timestamp: Date
+        timestamp: Date,
+        status: {
+            type: String,
+            enum: inviteStatus
+        }
     }]
 });
 

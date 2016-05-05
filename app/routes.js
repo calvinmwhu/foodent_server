@@ -235,7 +235,6 @@ module.exports = function (router, passport) {
                 });
             }
         });
-
     });
 
     router.put('/unfollowuser/:id', passport.authenticate('jwt', {session: false}), function (req, res) {
@@ -255,7 +254,48 @@ module.exports = function (router, passport) {
                 });
             }
         });
+    });
 
+
+    // this is for adding an user to an event guest list
+    router.put('/events/:id/adduser', passport.authenticate('jwt', {session: false}), function (req, res) {
+        var eventId = req.params.id;
+        var userId = req.body.userId;
+
+        Event.update({_id: eventId}, {$push: {guests: userId}}, function (err, product) {
+            if (err) {
+                res.status(500).json({message: err || err.name || "Unknown server error", data: []});
+            } else {
+                User.update({_id: userId}, {$push: {eventsAttended: eventId}}, function (err, product) {
+                    if (err) {
+                        res.status(500).json({message: err || err.name || "Unknown server error", data: []});
+                    } else {
+                        res.status(200).json({message: "resource updated", data: product});
+                    }
+                });
+            }
+        });
+    });
+
+
+    // this is for removing an user from an event guest list
+    router.put('/events/:id/removeuser', passport.authenticate('jwt', {session: false}), function (req, res) {
+        var eventId = req.params.id;
+        var userId = req.body.userId;
+
+        Event.update({_id: eventId}, {$pull: {guests: userId}}, function (err, product) {
+            if (err) {
+                res.status(500).json({message: err || err.name || "Unknown server error", data: []});
+            } else {
+                User.update({_id: userId}, {$pull: {eventsAttended: eventId}}, function (err, product) {
+                    if (err) {
+                        res.status(500).json({message: err || err.name || "Unknown server error", data: []});
+                    } else {
+                        res.status(200).json({message: "resource updated", data: product});
+                    }
+                });
+            }
+        });
     });
 
 
@@ -289,7 +329,14 @@ module.exports = function (router, passport) {
     });
 
     router.get('/events/:id', passport.authenticate('jwt', {session: false}), function (req, res) {
-        getSingleResource(Event, req, res);
+        // for getting each event, we want to populate its invite and address:
+        Event.findOne({_id: req.params.id}).populate('address').populate('invite').exec(function (err, populatedEvent) {
+            if (err || !populatedEvent) {
+                res.status(404).json({message: "Unable to retrieve event"});
+            } else {
+                res.status(200).json({message: "OK", data: populatedEvent});
+            }
+        });
     });
 
     router.get('/addresses/:id', passport.authenticate('jwt', {session: false}), function (req, res) {

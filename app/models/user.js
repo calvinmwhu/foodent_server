@@ -35,10 +35,8 @@ var UserSchema = new mongoose.Schema({
     followers: {
         type: [String]
     },
-    history: {
-        attended: [String],
-        hosted: [String]
-    },
+    eventsAttended: [String],
+    eventsHosted: [String],
     profileImage: {
         type: String
     },
