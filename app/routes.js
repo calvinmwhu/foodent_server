@@ -139,9 +139,9 @@ module.exports = function (router, passport) {
             numGuestsAllowed: req.body.numGuestsAllowed,
             food: {
                 cuisine: req.body.cuisine,
-                description: req.body.foodDescription,
-                items: req.body.foodItems
-            }
+                description: req.body.foodDescription
+            },
+            tags: req.body.tags
         });
         var address = new Address({
             addressLineFirst: req.body.addressOne,

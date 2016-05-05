@@ -27,9 +27,9 @@ var EventSchema = new mongoose.Schema({
     numGuestsAllowed: Number,
     food: {
         cuisine: [String],
-        description: String,
-        items: [String]
-    }
+        description: String
+    },
+    tags: [String]
 });
 
 // Export the Mongoose model
