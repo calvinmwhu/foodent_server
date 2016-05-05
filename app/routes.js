@@ -123,7 +123,7 @@ module.exports = function (router, passport) {
         });
     });
 
-    //this is for creating an event, we assume you only create invite after event is created. you don't created them at the same time
+    //this is for creating an event, we assume you only create invite after event is created. you don't create them at the same time
     //look at what this event post route expects request to give it, then design your front-end according to it
     router.post('/events', passport.authenticate('jwt', {session: false}), function (req, res) {
 
