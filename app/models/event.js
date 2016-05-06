@@ -8,7 +8,10 @@ var EventSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    host: [String],
+    host: {
+        type: String,
+        required: true
+    },
     guests: [String],
     notes: String,
     address: {
@@ -24,7 +27,10 @@ var EventSchema = new mongoose.Schema({
         ref: 'Invite'
     },
     images: [String],
-    numGuestsAllowed: Number,
+    numGuestsAllowed: {
+        type: Number,
+        default: 100
+    },
     food: {
         cuisine: [String],
         description: String

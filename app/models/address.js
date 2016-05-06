@@ -21,7 +21,8 @@ var AddressSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    coordinate: [Number]
+    longitude: Number,
+    latitude: Number
 });
 
 module.exports = mongoose.model('Address', AddressSchema);

@@ -148,23 +148,31 @@ module.exports = function (router, passport) {
             addressLineSecond: req.body.addressSecond,
             city: req.body.city,
             state: req.body.state,
-            zip: req.body.zip
+            zip: req.body.zip,
+            longitude: req.body.longitude,
+            latitude: req.body.latitude
         });
 
-        address.save().then(function (product) {
-            var addressId = product._id;
-            event.address = addressId;
-            return event.save();
-        }).then(function (product) {
-            Event.findOne({_id: product._id}).populate('address').exec(function (err, populatedEvent) {
-                if (err) {
-                    res.status(500).json({message: "Unable to retrieve event address", data: product});
-                } else {
-                    res.status(201).json({message: "Event Created", data: populatedEvent});
-                }
-            });
-        }, function (err) {
-            res.status(500).json({message: err, data: []});
+        address.save(function (err, addr) {
+            if (err || !addr) {
+                res.status(500).json({message: err || "Unable to save address", data: []});
+            } else {
+                event.address = addr._id;
+                // save event, then we also want to update the user's eventsHosted array
+                event.save().then(function (newEvent) {
+                    var eventId = newEvent._id;
+                    var hostId = newEvent.host;
+                    User.findByIdAndUpdate(hostId, {$push: {eventsHosted: eventId}}, function (err, product) {
+                        if (err) {
+                            res.status(500).json({message: err || "Unknown server error", event: newEvent, address:undefined});
+                        } else {
+                            res.status(201).json({message: "event created", event: newEvent, address:addr});
+                        }
+                    });
+                }, function (err) {
+                    res.status(500).json({message: err || "Unknown server error", data: []});
+                });
+            }
         });
     });
 
@@ -216,19 +224,29 @@ module.exports = function (router, passport) {
         });
     });
 
+    // this is for deleting an invite from an event
+    // look at the newInvite structure to determine how to send request
+    router.delete('/events/:event_id/invite', passport.authenticate('jwt', {session: false}), function (req, res) {
+        Event.findByIdAndUpdate(req.params.event_id, {$set: {invite: undefined}}, {new: true}).exec().then(function (response) {
+            res.status(200).json({message: "invite deleted", data: response.invite});
+        }, function (err) {
+            res.status(500).json({message: err, data: []});
+        });
+    });
+
     // follow a user end point, :id in url is the current user id
     // the idToFollow is in the req body
     router.put('/followuser/:id', passport.authenticate('jwt', {session: false}), function (req, res) {
         var currentId = req.params.id;
         var idToFollow = req.body.idToFollow;
 
-        User.findByIdAndUpdate(currentId, {$push: {following: idToFollow}}, {new: true}, function (err, newUser) {
+        User.findByIdAndUpdate(currentId, {$push: {following: idToFollow}}, function (err, product) {
             if (err) {
                 res.status(500).json({message: err || err.name || "Unknown server error", data: []});
             } else {
-                User.update({_id: idToFollow}, {$push: {followers: currentId}}, function (err, product) {
+                User.findByIdAndUpdate(idToFollow, {$push: {followers: currentId}}, {new: true}, function (err, newUser) {
                     if (err) {
-                        res.status(500).json({message: err || err.name || "Unknown server error", data: []});
+                        res.status(500).json({message: err || "Unknown server error", data: []});
                     } else {
                         res.status(200).json({message: "resource updated", data: newUser});
                     }
@@ -238,22 +256,21 @@ module.exports = function (router, passport) {
     });
 
 
-
     // follow a user end point, :id in url is the current user id
     // the idToFollow is in the req body
     router.put('/unfollowuser/:id', passport.authenticate('jwt', {session: false}), function (req, res) {
         var currentId = req.params.id;
         var idToUnfollow = req.body.idToUnfollow;
 
-        User.findByIdAndUpdate(currentId, {$pull: {following: idToUnfollow}}, {new: true}, function (err, newuser) {
+        User.findByIdAndUpdate(currentId, {$pull: {following: idToUnfollow}}, function (err, product) {
             if (err) {
                 res.status(500).json({message: err || err.name || "Unknown server error", data: []});
             } else {
-                User.update({_id: idToUnfollow}, {$pull: {followers: currentId}}, function (err, product) {
+                User.findByIdAndUpdate(idToUnfollow, {$pull: {followers: currentId}}, {new: true}, function (err, newUser) {
                     if (err) {
                         res.status(500).json({message: err || err.name || "Unknown server error", data: []});
                     } else {
-                        res.status(200).json({message: "resource updated", data: newuser});
+                        res.status(200).json({message: "resource updated", data: newUser});
                     }
                 });
             }
@@ -266,7 +283,7 @@ module.exports = function (router, passport) {
         var eventId = req.params.id;
         var userId = req.body.userId;
 
-        Event.findByIdAndUpdate(eventId, {$push: {guests: userId}}, {new:true}, function (err, newEvent) {
+        Event.findByIdAndUpdate(eventId, {$push: {guests: userId}}, {new: true}, function (err, newEvent) {
             if (err) {
                 res.status(500).json({message: err, data: []});
             } else {
@@ -287,7 +304,7 @@ module.exports = function (router, passport) {
         var eventId = req.params.id;
         var userId = req.body.userId;
 
-        Event.findByIdAndUpdate(eventId, {$pull: {guests: userId}}, {new:true}, function (err, newEvent) {
+        Event.findByIdAndUpdate(eventId, {$pull: {guests: userId}}, {new: true}, function (err, newEvent) {
             if (err) {
                 res.status(500).json({message: err || err.name || "Unknown server error", data: []});
             } else {
@@ -307,7 +324,15 @@ module.exports = function (router, passport) {
         var inviteId = req.params.id;
         var userId = req.body.userId;
 
-        Invite.findByIdAndUpdate(inviteId, {$push: {request: {userId: userId, timestamp: Date.now(), status: 'pending'}}}, {new:true},function (err, product) {
+        Invite.findByIdAndUpdate(inviteId, {
+            $push: {
+                request: {
+                    userId: userId,
+                    timestamp: Date.now(),
+                    status: 'pending'
+                }
+            }
+        }, {new: true}, function (err, product) {
             if (err) {
                 res.status(500).json({message: err, data: []});
             } else {
@@ -336,7 +361,10 @@ module.exports = function (router, passport) {
         var userId = req.body.userId;
         var userStatus = req.body.userStatus;
 
-        Invite.findOneAndUpdate({_id: inviteId, request: {$elemMatch: { userId: userId }}}, {$set: { "request.$.status" : userStatus}}, {new:true}, function (err, product) {
+        Invite.findOneAndUpdate({
+            _id: inviteId,
+            request: {$elemMatch: {userId: userId}}
+        }, {$set: {"request.$.status": userStatus}}, {new: true}, function (err, product) {
             if (err) {
                 res.status(500).json({message: err, data: []});
             } else {
