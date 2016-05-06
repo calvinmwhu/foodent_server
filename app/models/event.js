@@ -13,12 +13,12 @@ var EventSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    guests: [String],
+    guests: [mongoose.Schema.ObjectId],
     notes: String,
-    address: {
-        type: mongoose.Schema.ObjectId,
-        ref: 'Address'
-    },
+    //address: {
+    //    type: mongoose.Schema.ObjectId,
+    //    ref: 'Address'
+    //},
     time: {
         start: Date,
         end: Date
@@ -36,7 +36,19 @@ var EventSchema = new mongoose.Schema({
         cuisine: [String],
         description: String
     },
-    tags: [String]
+    tags: [String],
+    longitude: {
+        type: Number,
+        required: true
+    },
+    latitude: {
+        type: Number,
+        required: true
+    },
+    formatted_address: {
+        type: String,
+        required: true
+    }
 });
 
 // Export the Mongoose model

@@ -40,10 +40,10 @@ var UserSchema = new mongoose.Schema({
     profileImage: {
         type: String
     },
-    address: {
-        type: mongoose.Schema.ObjectId,
-        ref: 'Address'
-    },
+    //address: {
+    //    type: mongoose.Schema.ObjectId,
+    //    ref: 'Address'
+    //},
     notifications: [{
         text: String, notificationType: String, user_id: String, event_id: String, isRead: Boolean
     }]

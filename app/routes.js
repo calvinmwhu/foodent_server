@@ -33,7 +33,7 @@ module.exports = function (router, passport) {
                     res.status(200).json({message: "OK", data: products});
                 }
             }, function (err) {
-                res.status(500).json({message: err.name || err.message || "Unknown Internal Server Error", data: []});
+                res.status(500).json({message: err || "Unknown Internal Server Error", data: []});
             });
         }
     };
@@ -141,38 +141,26 @@ module.exports = function (router, passport) {
                 cuisine: req.body.cuisine,
                 description: req.body.foodDescription
             },
-            tags: req.body.tags
-        });
-        var address = new Address({
-            addressLineFirst: req.body.addressOne,
-            addressLineSecond: req.body.addressSecond,
-            city: req.body.city,
-            state: req.body.state,
-            zip: req.body.zip,
+            tags: req.body.tags,
+            formatted_address: req.body.formatted_address,
             longitude: req.body.longitude,
             latitude: req.body.latitude
+
         });
 
-        address.save(function (err, addr) {
-            if (err || !addr) {
-                res.status(500).json({message: err || "Unable to save address", data: []});
-            } else {
-                event.address = addr._id;
-                // save event, then we also want to update the user's eventsHosted array
-                event.save().then(function (newEvent) {
-                    var eventId = newEvent._id;
-                    var hostId = newEvent.host;
-                    User.findByIdAndUpdate(hostId, {$push: {eventsHosted: eventId}}, function (err, product) {
-                        if (err) {
-                            res.status(500).json({message: err || "Unknown server error", event: newEvent, address:addr});
-                        } else {
-                            res.status(201).json({message: "event created", event: newEvent, address:addr});
-                        }
-                    });
-                }, function (err) {
-                    res.status(500).json({message: err || "Unknown server error", data: []});
-                });
-            }
+        // save event, then we also want to update the user's eventsHosted array
+        event.save().then(function (newEvent) {
+            var eventId = newEvent._id;
+            var hostId = newEvent.host;
+            User.findByIdAndUpdate(hostId, {$push: {eventsHosted: eventId}}, function (err, product) {
+                if (err) {
+                    res.status(500).json({message: err || "Unknown server error", event: newEvent});
+                } else {
+                    res.status(201).json({message: "event created", event: newEvent});
+                }
+            });
+        }, function (err) {
+            res.status(500).json({message: err || "Unknown server error", data: []});
         });
     });
 
@@ -240,11 +228,11 @@ module.exports = function (router, passport) {
         var currentId = req.params.id;
         var idToFollow = req.body.idToFollow;
 
-        User.findByIdAndUpdate(currentId, {$push: {following: idToFollow}}, function (err, product) {
+        User.findByIdAndUpdate(currentId, {$addToSet: {following: idToFollow}}, function (err, product) {
             if (err) {
                 res.status(500).json({message: err || err.name || "Unknown server error", data: []});
             } else {
-                User.findByIdAndUpdate(idToFollow, {$push: {followers: currentId}}, {new: true}, function (err, newUser) {
+                User.findByIdAndUpdate(idToFollow, {$addToSet: {followers: currentId}}, {new: true}, function (err, newUser) {
                     if (err) {
                         res.status(500).json({message: err || "Unknown server error", data: []});
                     } else {
@@ -283,11 +271,11 @@ module.exports = function (router, passport) {
         var eventId = req.params.id;
         var userId = req.body.userId;
 
-        Event.findByIdAndUpdate(eventId, {$push: {guests: userId}}, {new: true}, function (err, newEvent) {
+        Event.findByIdAndUpdate(eventId, {$addToSet: {guests: userId}}, {new: true}, function (err, newEvent) {
             if (err) {
                 res.status(500).json({message: err, data: []});
             } else {
-                User.update({_id: userId}, {$push: {eventsAttended: eventId}}, function (err, product) {
+                User.update({_id: userId}, {$addToSet: {eventsAttended: eventId}}, function (err, product) {
                     if (err) {
                         res.status(500).json({message: err, data: []});
                     } else {
@@ -373,7 +361,6 @@ module.exports = function (router, passport) {
         });
     });
 
-
     router.get('/userprofile', passport.authenticate('jwt', {session: false}), function (req, res) {
         res.status(200).json({success: true, message: 'Welcome to your profile page', data: req.user});
     });
@@ -405,7 +392,7 @@ module.exports = function (router, passport) {
 
     router.get('/events/:id', passport.authenticate('jwt', {session: false}), function (req, res) {
         // for getting each event, we want to populate its invite and address:
-        Event.findOne({_id: req.params.id}).populate('address').populate('invite').exec(function (err, populatedEvent) {
+        Event.findOne({_id: req.params.id}).populate('invite').exec(function (err, populatedEvent) {
             if (err || !populatedEvent) {
                 res.status(404).json({message: "Unable to retrieve event"});
             } else {
