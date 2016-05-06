@@ -132,8 +132,8 @@ module.exports = function (router, passport) {
             host: req.body.host,
             notes: req.body.notes,
             time: {
-                start: req.body.starttime,
-                end: req.body.endtime
+                start: req.body.startTime,
+                end: req.body.endTime
             },
             images: req.body.imageUrls,
             numGuestsAllowed: req.body.numGuestsAllowed,
@@ -164,7 +164,7 @@ module.exports = function (router, passport) {
                     var hostId = newEvent.host;
                     User.findByIdAndUpdate(hostId, {$push: {eventsHosted: eventId}}, function (err, product) {
                         if (err) {
-                            res.status(500).json({message: err || "Unknown server error", event: newEvent, address:undefined});
+                            res.status(500).json({message: err || "Unknown server error", event: newEvent, address:addr});
                         } else {
                             res.status(201).json({message: "event created", event: newEvent, address:addr});
                         }

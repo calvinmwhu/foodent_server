@@ -2,6 +2,7 @@
 var mongoose = require('mongoose');
 var Address = require('./address');
 var Invite = require('./invite');
+var cuisineType = ['Chinese','American','Indian','Thai','Cajun', 'Arab'];
 
 var EventSchema = new mongoose.Schema({
     name: {

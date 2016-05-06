@@ -3,26 +3,28 @@ var statesArray = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DC", "DE", "FL", "
 
 var AddressSchema = new mongoose.Schema({
     addressLineFirst: {
-        type: String,
-        required: true
+        type: String
     },
     addressLineSecond: String,
     city: {
-        type: String,
-        required: true
+        type: String
     },
     state: {
         type: String,
         uppercase: true,
-        required: true,
         enum: statesArray
     },
     zip: {
+        type: Number
+    },
+    longitude: {
         type: Number,
         required: true
     },
-    longitude: Number,
-    latitude: Number
+    latitude: {
+        type: Number,
+        required: true
+    }
 });
 
 module.exports = mongoose.model('Address', AddressSchema);
